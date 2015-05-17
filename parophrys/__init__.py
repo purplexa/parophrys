@@ -5,7 +5,7 @@ import paramiko
 class _Environment:
     def __init__(self):
         self.hosts = []
-        self.host_groups = []
+        self.hostgroups = {}
         self.ignore_host_keys = False
 
 
@@ -17,10 +17,10 @@ def _process_hosts(ctx, param, value):
         ctx.obj = _env
     if param.name == 'host':
         ctx.obj.hosts += value
-    if param.name == 'host_group':
+    if param.name == 'hostgroup':
         for func in value:
-            if func in ctx.obj.host_groups.keys():
-                ctx.obj.hosts += func()
+            if func in ctx.obj.hostgroups.keys():
+                ctx.obj.hosts += ctx.obj.hostgroups[func]()
             else:
                 raise click.UsageError(
                     'Host group {} does not exist!'.format(func))
@@ -32,7 +32,7 @@ def _process_hosts(ctx, param, value):
 @click.group()
 @click.option('--host', '-H', callback=_process_hosts,
               multiple=True, is_eager=True, expose_value=False)
-@click.option('--host-group', '-G', callback=_process_hosts,
+@click.option('--hostgroup', '-G', callback=_process_hosts,
               multiple=True, is_eager=True, expose_value=False)
 @click.option('--role', '-R', callback=_process_hosts,
               multiple=True, is_eager=True, expose_value=False)
@@ -42,6 +42,16 @@ def _process_hosts(ctx, param, value):
 def cli(ctx):
     if not ctx.obj:
         ctx.obj = _env
+
+
+cli.option = click.option
+
+
+def hostgroup(group_name):
+    def hg_decorator(func):
+        _env.hostgroups[group_name] = func
+        return func
+    return hg_decorator
 
 
 def hosts():
