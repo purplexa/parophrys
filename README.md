@@ -1,5 +1,11 @@
 # Parophrys - remote task CLI builder
 
+This isn't packaged yet. To load it, `cd` into the repo and execute:
+
+```bash
+pip install --editable . --upgrade .
+```
+
 ## CLI Usage
 
 ```bash
