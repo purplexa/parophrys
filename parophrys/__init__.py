@@ -41,58 +41,53 @@ class Config:
 config = Config()
 
 
-def _process_hosts(ctx, param, value):
-    if not ctx.obj:
-        ctx.obj = config
-    if param.name == 'host':
-        ctx.obj.hosts += value
-    if param.name == 'hostgroup':
-        for func in value:
-            if func in ctx.obj.hostgroups.keys():
-                ctx.obj.hosts += ctx.obj.hostgroups[func]()
-            else:
-                raise click.UsageError(
-                    'Host group {} does not exist!'.format(func))
-    if param.name == 'role':
-        if not hasattr(config, 'query'):
-            config.puppetdb()
-        for role in value:
-            data = config.query(endpoint='resources',
-                                query=["and",
-                                       ["=", "type", "Class"],
-                                       ["~", "title", role]])
-            ctx.obj.hosts += [i['certname'] for i in data]
-    if param.name == 'query':
-        pass
-
 @click.group()
-@click.option('--host', '-H', callback=_process_hosts,
-              multiple=True, expose_value=False)
-@click.option('--hostgroup', '-G', callback=_process_hosts,
-              multiple=True, expose_value=False)
-@click.option('--role', '-R', callback=_process_hosts,
-              multiple=True, expose_value=False)
-@click.option('--query', '-Q', callback=_process_hosts,
-              multiple=True, expose_value=False)
-@click.option('--puppetdb-connect', is_eager=True)
-@click.option('--puppetdb-host', is_eager=True)
+@click.option('--host',         '-H',   multiple=True,
+              help='Hostnames to run the command against')
+@click.option('--hostgroup',    '-G',   multiple=True,
+              help='Predefined hostgroups to run the command against')
+@click.option('--puppet-class', '-C',   multiple=True,
+              help=('Puppet class to query PuppetDB for to determine hosts to '
+                    'run the command against'))
+@click.option('--query',        '-Q',   multiple=True,
+              help=('Raw JSON PuppetDB query to use to determine hosts to run '
+                    'the command against'))
+@click.option('--puppetdb-connect',     show_default=True,
+              default='http://localhost:8080',
+              help='Connect string to use with curl to query PuppetDB')
+@click.option('--puppetdb-host',        show_default=True,
+              default='localhost',
+              help='Hostname to use with SSH to access the PuppetDB server')
 @click.pass_context
-def cli(ctx, puppetdb_connect, puppetdb_host):
+def cli(ctx, host, hostgroup, puppet_class, query, puppetdb_connect, puppetdb_host):
     if not ctx.obj:
         ctx.obj = config
     if not hasattr(config, 'query'):
         if puppetdb_connect:
             if puppetdb_host:
                 config.puppetdb(connect_string=puppetdb_connect,
-                                use_ssh=True,
                                 hostname=puppetdb_host)
             else:
                 config.puppetdb(connect_string=puppetdb_connect)
         else:
             if puppetdb_host:
-                config.puppetdb(use_ssh=True,
-                                hostname=puppetdb_host)
-
+                config.puppetdb(hostname=puppetdb_host)
+    if host:
+        config.hosts += host
+    if hostgroup:
+        for func in hostgroup:
+            if func in config.hostgroups.keys():
+                config.hosts += ctx.obj.hostgroups[func]()
+            else:
+                raise click.UsageError(
+                    'Hostgroup {} does not exist!'.format(func))
+    if puppet_class:
+        for role in puppet_class:
+            data = config.query(endpoint='resources',
+                                query=["and",
+                                       ["=", "type", "Class"],
+                                       ["~", "title", role]])
+            ctx.obj.hosts += [i['certname'] for i in data]
 
 cli.option = click.option
 
