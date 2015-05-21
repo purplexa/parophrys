@@ -2,7 +2,7 @@ import click
 import paramiko
 
 import json
-
+from multiprocessing.pool import ThreadPool
 
 class Config:
     """This represents the base config object for the current running task."""
@@ -103,21 +103,39 @@ def hosts():
     return config.hosts
 
 
+def cmd_exec(command, host, username=None, password=None):
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
+    if config.ignore_host_keys:
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname=host, username=username, password=password)
+    stdin, stdout, stderr = ssh.exec_command(command)
+    return stdout.read()
+
+
 def do(command,
        hosts=None,
        username=None,
-       password=None):
+       password=None,
+       parallel=False):
     if not hosts:
         hosts = config.hosts
     if not isinstance(hosts, list):
         hosts = [hosts]
     output = []
-    for host in hosts:
-        ssh = paramiko.SSHClient()
-        ssh.load_system_host_keys()
-        if config.ignore_host_keys:
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=host, username=username, password=password)
-        stdin, stdout, stderr = ssh.exec_command(command)
-        output.append(stdout.read())
+    if parallel:
+        threads = []
+        pool = ThreadPool(processes=len(hosts))
+        for host in hosts:
+            threads.append(pool.apply_async(
+                cmd_exec,
+                (command, host, username, password,)))
+        for thread in threads:
+            output.append(thread.get())
+    else:
+        for host in hosts:
+            output.append(cmd_exec(command=command,
+                                   host=host,
+                                   username=username,
+                                   password=password))
     return output
