@@ -12,5 +12,11 @@ def hostname(fqdn):
         dashf = ' -f'
     else:
         dashf = ''
-    for output in do('hostname' + dashf):
+    for output in do('hostname' + dashf, parallel=True):
+        print output
+
+
+@cli.command()
+def date():
+    for output in do('date; sleep 4', parallel=True):
         print output
