@@ -33,5 +33,5 @@ def my_command(flag, parameter=None):
 And to run it:
 
 ```bash
-paro -R 'Role::Something' my_command --flag --parameter my_file
+paro -C 'Role::Something' my_command --flag --parameter my_file
 ```
