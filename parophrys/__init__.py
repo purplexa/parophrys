@@ -103,7 +103,10 @@ def hosts():
     return config.hosts
 
 
-def do(command, hosts=None):
+def do(command,
+       hosts=None,
+       username=None,
+       password=None):
     if not hosts:
         hosts = config.hosts
     if not isinstance(hosts, list):
@@ -114,7 +117,7 @@ def do(command, hosts=None):
         ssh.load_system_host_keys()
         if config.ignore_host_keys:
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(host)
+        ssh.connect(hostname=host, username=username, password=password)
         stdin, stdout, stderr = ssh.exec_command(command)
         output.append(stdout.read())
     return output
