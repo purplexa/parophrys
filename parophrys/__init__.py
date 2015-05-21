@@ -4,15 +4,11 @@ import paramiko
 import json
 
 
-class _Environment:
+class Config:
+    """This represents the base config object for the current running task."""
     def __init__(self):
         self.hosts = []
         self.hostgroups = {}
-        self.ignore_host_keys = False
-
-
-class Config:
-    def __init__(self):
         self.ignore_host_keys = False
 
     def puppetdb(self, connect_string='http://localhost:8080', hostname=None):
@@ -42,14 +38,12 @@ class Config:
         self.query = query
 
 
-_env = _Environment()
-
 config = Config()
 
 
 def _process_hosts(ctx, param, value):
     if not ctx.obj:
-        ctx.obj = _env
+        ctx.obj = config
     if param.name == 'host':
         ctx.obj.hosts += value
     if param.name == 'hostgroup':
@@ -85,7 +79,7 @@ def _process_hosts(ctx, param, value):
 @click.pass_context
 def cli(ctx, puppetdb_connect, puppetdb_host):
     if not ctx.obj:
-        ctx.obj = _env
+        ctx.obj = config
     if not hasattr(config, 'query'):
         if puppetdb_connect:
             if puppetdb_host:
@@ -105,18 +99,18 @@ cli.option = click.option
 
 def hostgroup(group_name):
     def hg_decorator(func):
-        _env.hostgroups[group_name] = func
+        config.hostgroups[group_name] = func
         return func
     return hg_decorator
 
 
 def hosts():
-    return _env.hosts
+    return config.hosts
 
 
 def do(command, hosts=None):
     if not hosts:
-        hosts = _env.hosts
+        hosts = config.hosts
     if not isinstance(hosts, list):
         hosts = [hosts]
     output = []
