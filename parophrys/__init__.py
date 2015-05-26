@@ -103,13 +103,18 @@ def hosts():
     return config.hosts
 
 
-def cmd_exec(command, host, username=None, password=None):
+def ssh_open(host, username=None, password=None):
     ssh = paramiko.SSHClient()
     ssh.load_system_host_keys()
     if config.ignore_host_keys:
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostname=host, username=username, password=password)
+    return ssh
+
+def cmd_exec(command, host, username=None, password=None):
+    ssh = ssh_open(host, username=username, password=password)
     stdin, stdout, stderr = ssh.exec_command(command)
+    print stderr.read()
     return stdout.read()
 
 
@@ -139,3 +144,14 @@ def do(command,
                                    username=username,
                                    password=password))
     return output
+
+def send_file(local, remote, hosts=None, username=None, password=None):
+    if not hosts:
+        hosts=config.hosts
+    if not isinstance(hosts, list):
+        hosts = [hosts]
+    for host in hosts:
+        ssh = ssh_open(host=host, username=username, password=password)
+        ftp = ssh.open_sftp()
+        ftp.put(local, remote)
+        ftp.close()
