@@ -46,7 +46,7 @@ config = Config()
               help='Hostnames to run the command against')
 @click.option('--hostgroup',    '-G',   multiple=True,
               help='Predefined hostgroups to run the command against')
-@click.option('--puppet-class', '-C',   multiple=True,
+@click.option('--class', '-C', 'puppet_class', multiple=True,
               help=('Puppet class to query PuppetDB for to determine hosts to '
                     'run the command against'))
 @click.option('--query',        '-Q',   multiple=True,
