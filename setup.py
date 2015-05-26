@@ -2,11 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='parophrys',
-    version='0.1.0',
+    version='0.1.1',
     py_modules=['parophrys'],
     packages=find_packages(),
     include_package_data=True,
     author='Ryan Whitehurst',
+    author_email='ryan@ryanwhitehurst.com',
     url='https://github.com/thrnio/parophrys',
     license='Apache License 2.0',
     install_requires=[
