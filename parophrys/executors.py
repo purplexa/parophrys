@@ -18,7 +18,7 @@ class Executor(object):
     def __init__(self, *args, **kwargs):
         try:
             for name, method in cls.__dict__.iteritems():
-                if hasattr(method, "use_class"):
+                if hasattr(method, 'is_metaproperty'):
                     self._metadata.append()
         except AttributeError:
             raise AttributeError('Executors must define self._metadata')
