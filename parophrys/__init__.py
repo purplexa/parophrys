@@ -1,8 +1,10 @@
 import click
 import paramiko
 
+from contextlib import contextmanager
 import json
 from multiprocessing.pool import ThreadPool
+
 
 class Config:
     """This represents the base config object for the current running task."""
@@ -111,45 +113,37 @@ def ssh_open(host, username=None, password=None):
     ssh.connect(hostname=host, username=username, password=password)
     return ssh
 
+
 def cmd_exec(command, host, username=None, password=None):
     ssh = ssh_open(host, username=username, password=password)
     stdin, stdout, stderr = ssh.exec_command(command)
-    print stderr.read()
-    return stdout.read()
+    # Need to return ssh so that the object doesn't get garbage collected early.
+    return stdin, stdout, stderr, ssh
 
-
+@contextmanager
 def do(command,
        hosts=None,
        username=None,
-       password=None,
-       parallel=False):
-    if not hosts:
-        hosts = config.hosts
-    if not isinstance(hosts, list):
-        hosts = [hosts]
-    output = []
-    if parallel:
-        threads = []
-        pool = ThreadPool(processes=len(hosts))
-        for host in hosts:
-            threads.append(pool.apply_async(
-                cmd_exec,
-                (command, host, username, password,)))
-        for thread in threads:
-            output.append(thread.get())
-    else:
-        for host in hosts:
-            output.append(cmd_exec(command=command,
-                                   host=host,
-                                   username=username,
-                                   password=password))
-    return output
+       password=None):
+    """Run an ssh command on a list of hosts."""
+    hosts = hosts or config.hosts
+    hosts = hosts if isinstance(hosts, list) else [hosts]
+    output = dict()
+    sshes = list()
+    for host in hosts:
+        stdin, stdout, stderr, ssh = cmd_exec(command=command,
+                                              host=host,
+                                              username=username,
+                                              password=password)
+        output[host] = dict(stdout=stdout, stdin=stdin, stderr=stderr)
+        sshes.append(ssh)
+    yield output
+    for ssh in sshes:
+        ssh.close()
 
 def send_file(local, remote, hosts=None, username=None, password=None):
-    if not hosts:
-        hosts=config.hosts
-    if not isinstance(hosts, list):
-        hosts = [hosts]
+    hosts = hosts or config.hosts
+    hosts = hosts if isinstance(hosts, list) else [hosts]
     for host in hosts:
         ssh = ssh_open(host=host, username=username, password=password)
         ftp = ssh.open_sftp()
