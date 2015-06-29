@@ -6,22 +6,17 @@ from functools import wraps
 
 def metaproperty(function):
     function.is_metaproperty = True
-    @wraps(function)
-    def generated(*args, **kwargs):
-        return function(*args, **kwargs)
-    return generated
+    return function
 
 
 class Executor(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, *args, **kwargs):
-        try:
-            for name, method in cls.__dict__.iteritems():
-                if hasattr(method, 'is_metaproperty'):
-                    self._metadata.append()
-        except AttributeError:
-            raise AttributeError('Executors must define self._metadata')
+        self._metadata = []
+        for name, method in self.__dict__.iteritems():
+            if hasattr(method, 'is_metaproperty'):
+                self._metadata.append()
 
     @property
     def metaproperties(self):
