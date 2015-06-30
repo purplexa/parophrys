@@ -9,14 +9,17 @@ def metaproperty(function):
     return function
 
 
-class Executor(object):
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, *args, **kwargs):
-        self._metadata = []
-        for name, method in self.__dict__.iteritems():
+class ExecutorMeta(abc.ABCMeta):
+    def __init__(cls, name, bases, clsdict):
+        super(ExecutorMeta, cls).__init__(name, bases, clsdict)
+        cls._metadata = []
+        for name, method in cls.__dict__.iteritems():
             if hasattr(method, 'is_metaproperty'):
-                self._metadata.append()
+                cls._metadata.append(method)
+
+
+class Executor(object):
+    __metaclass__ = ExecutorMeta
 
     @property
     def metaproperties(self):
@@ -64,7 +67,7 @@ class SSHCommand(Executor):
         super(SSHCommand, self).__init__(*args, **kwargs)
 
     def __len__(self):
-        return len(self.hosts)
+        return len(self._hosts)
 
     def execute(self, stdin=None):
         pass

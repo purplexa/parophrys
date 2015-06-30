@@ -1,4 +1,5 @@
 import abc
+import types
 
 from functools import wraps
 
@@ -95,7 +96,7 @@ class ExecutableBundle(object):
     def _metamethod(method):
         @wraps(method)
         def generated(self, *args, **kwargs):
-            method(*args, **kwargs)
+            method(self.executor, *args, **kwargs)
             return self
         generated.__doc__ = method.__doc__
         return generated
@@ -107,7 +108,8 @@ class ExecutableBundle(object):
             self.executor = executor
             for m in self.executor.metaproperties:
                 if not getattr(self, m.__name__, False):
-                    setattr(self, m.__name__, self._metamethod(m))
+                    setattr(self, m.__name__,
+                            types.MethodType(self._metamethod(m), self))
                 else:
                     raise TypeError('Method {} already exists on {}'.format(
                         m, type(self)))
