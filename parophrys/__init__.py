@@ -114,8 +114,10 @@ def ssh_open(host, username=None, password=None):
     return ssh
 
 
-def cmd_exec(command, host, username=None, password=None):
+def cmd_exec(command, host, username=None, password=None, forward_agent=False):
     ssh = ssh_open(host, username=username, password=password)
+    if forward_agent:
+        paramiko.agent.AgentRequestHandler(ssh.get_transport().open_session())
     stdin, stdout, stderr = ssh.exec_command(command)
     # Need to return ssh so that the object doesn't get garbage collected early.
     return stdin, stdout, stderr, ssh
@@ -124,7 +126,8 @@ def cmd_exec(command, host, username=None, password=None):
 def do(command,
        hosts=None,
        username=None,
-       password=None):
+       password=None,
+       forward_agent=False):
     """Run an ssh command on a list of hosts."""
     hosts = hosts or config.hosts
     hosts = hosts if isinstance(hosts, list) else [hosts]
@@ -134,7 +137,8 @@ def do(command,
         stdin, stdout, stderr, ssh = cmd_exec(command=command,
                                               host=host,
                                               username=username,
-                                              password=password)
+                                              password=password,
+                                              forward_agent=forward_agent)
         output[host] = dict(stdout=stdout, stdin=stdin, stderr=stderr)
         sshes.append(ssh)
     yield output
