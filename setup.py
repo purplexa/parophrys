@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='parophrys',
-    version='0.2.0',
+    version='0.3.0',
     py_modules=['parophrys'],
     packages=find_packages(),
     include_package_data=True,
