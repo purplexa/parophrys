@@ -29,7 +29,7 @@ class Config:
                 except:
                     query_string = json.dumps(query)
                 else:
-                    abort('Received query is poorly formatted')
+                    click.abort('Received query is poorly formatted')
                 command.append("--data-urlencode query='{}'".format(query_string))
                 command_string = ''.join(command).format(endpoint)
             else:
